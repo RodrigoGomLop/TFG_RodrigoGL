@@ -1,6 +1,6 @@
 import pandas as pd
 
-# carga de los 2 datasets limpios
+# carga de los 2 datasets limpios.
 
 ratings = pd.read_csv("data/processed/ratings_clean.csv")
 works = pd.read_csv("data/processed/works_clean.csv")
@@ -8,22 +8,59 @@ works = pd.read_csv("data/processed/works_clean.csv")
 print("Ratings:", ratings.shape)
 print("Works:", works.shape)
 
-# inner join para quedarnos solo con los libros que tienen ratings y su información
+# merge.
 
 df = ratings.merge(works, on="work_id", how="inner")
 
-print("Después del merge:", df.shape)
+print("Despues del merge:", df.shape)
 
-# validamos
+# porcentaje de registros conservados.
 
-print("\nColumnas:")
+retention = len(df) / len(ratings) * 100
+
+print("\nPORCENTAJE DE REGISTROS CONSERVADOS:")
+print(f"{retention:.2f}%")
+
+# validacion de columnas.
+
+print("\nCOLUMNAS:")
 print(df.columns)
 
-print("\nNulos:")
+# validacion de nulos.
+
+print("\nNULOS:")
 print(df.isnull().sum())
 
-# mostramos el datset final y lo guardamos
+# validacion de duplicados.
 
+print("\nDUPLICADOS:")
+print(df.duplicated().sum())
+
+# numero de libros unicos.
+
+print("\nLIBROS UNICOS:")
+print(df["work_id"].nunique())
+
+# numero de usuarios.
+
+print("\nUSUARIOS:")
+print(df["user_id"].nunique())
+
+# estadisticas de ratings.
+
+print("\nESTADISTICAS DE RATING:")
+print(df["rating"].describe())
+
+# muestra del dataset.
+
+print("\nMUESTRA:")
 print(df.head())
-df.to_csv("data/processed/final_dataset.csv", index=False)
+
+# guardar dataset final.
+
+df.to_csv(
+    "data/processed/final_dataset.csv",
+    index=False
+)
+
 print("\nfinal_dataset.csv guardado")

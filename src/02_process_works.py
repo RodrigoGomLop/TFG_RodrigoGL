@@ -2,17 +2,14 @@ import json
 import pandas as pd
 import ast
 
-# cargamos works id pero solo los que tienen ratings ya que el dataset es muy grande
-# y lo que vamos a usar son los libros que tienen ratings
+# cargar ratings para obtener los work_id necesarios.
 
 ratings = pd.read_csv("data/processed/ratings_clean.csv")
 work_ids_needed = set(ratings["work_id"].unique())
 
 print(f"Work IDs a buscar: {len(work_ids_needed)}")
 
-# la ultima columna del dataset es un json con toda la información del libro
-# pero el dataset es muy grande así que lo vamos a leer línea por línea y solo extraeremos
-# la información de los libros que necesitamos
+# lectura del dump de works.
 
 path = "data/raw/ol_dump_works_2025-11-06.txt"
 
@@ -20,50 +17,75 @@ filtered_data = []
 
 with open(path, "r", encoding="utf-8") as f:
     for i, line in enumerate(f):
-        
+
         parts = line.split("\t")
-        
+
         if len(parts) < 5:
             continue
-        
+
         work_id = parts[1].replace("/works/", "")
-        
+
         if work_id in work_ids_needed:
+
             try:
                 json_data = json.loads(parts[4])
-                
+
                 title = json_data.get("title", None)
                 subjects = json_data.get("subjects", None)
-                
+
                 filtered_data.append({
                     "work_id": work_id,
                     "title": title,
                     "subjects": subjects
                 })
-            
+
             except:
                 continue
-        
+
         if i % 500000 == 0:
             print(f"Líneas procesadas: {i}")
 
-# Convertimos en un dataframe de pandas
+# convertir a dataframe.
 
 df = pd.DataFrame(filtered_data)
 
-print("Antes de limpieza:", len(df))
+print("\nNUMERO DE REGISTROS:")
+print(len(df))
 
-# limpieza de datos
+# analisis inicial.
 
-# eliminar nulos
+print("\nNULOS POR COLUMNA:")
+print(df.isnull().sum())
+
+print("\nPORCENTAJE DE NULOS:")
+print((df.isnull().sum() / len(df)) * 100)
+
+print("\nDUPLICADOS POR WORK_ID:")
+print(df["work_id"].duplicated().sum())
+
+print("\nANTES DE LIMPIEZA:")
+print(len(df))
+
+# nulos antes de limpiar.
+
+print("\nNULOS ANTES DE LIMPIAR:")
+print(df.isnull().sum())
+
+# limpieza.
+
 df = df.dropna(subset=["subjects"])
 
-# eliminar listas vacías
 df = df[df["subjects"] != "[]"]
 
-print("Después de limpieza:", len(df))
+print("\nDESPUES DE LIMPIEZA:")
+print(len(df))
 
-# convertimos las cadenas de texto que representan listas en listas reales
+# nulos despues de limpiar.
+
+print("\nNULOS DESPUES DE LIMPIAR:")
+print(df.isnull().sum())
+
+# convertir listas.
 
 def parse_subjects(x):
     try:
@@ -73,17 +95,33 @@ def parse_subjects(x):
 
 df["subjects"] = df["subjects"].apply(parse_subjects)
 
-# convertir a string las listas
-df["subjects_str"] = df["subjects"].apply(lambda x: " ".join(x))
+# longitud de subjects.
 
-# dataset final con las columnas necesarias
+df["subjects_length"] = df["subjects"].apply(
+    lambda x: len(x) if isinstance(x, list) else 0
+)
+
+print("\nESTADISTICAS DE LONGITUD DE SUBJECTS:")
+print(df["subjects_length"].describe())
+
+# convertir listas a texto.
+
+df["subjects_str"] = df["subjects"].apply(
+    lambda x: " ".join(map(str, x))
+)
+
+# dataset final.
 
 df = df[["work_id", "title", "subjects_str"]]
 
+print("\nMUESTRA DEL DATASET:")
 print(df.head())
 
-# guardamos el dataset limpio
+# guardar dataset.
 
-df.to_csv("data/processed/works_clean.csv", index=False)
+df.to_csv(
+    "data/processed/works_clean.csv",
+    index=False
+)
 
-print("works_clean.csv guardado")
+print("\nworks_clean.csv guardado")
