@@ -8,11 +8,15 @@ works = pd.read_csv("data/processed/works_clean.csv")
 print("Ratings:", ratings.shape)
 print("Works:", works.shape)
 
-# merge.
+# merge
 
 df = ratings.merge(works, on="work_id", how="inner")
 
+
 print("Despues del merge:", df.shape)
+
+# eliminacion de nulos
+df = df.dropna(subset=["subjects_str"])
 
 # porcentaje de registros conservados.
 
